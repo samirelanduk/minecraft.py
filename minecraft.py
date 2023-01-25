@@ -62,8 +62,42 @@ def get_last_save_time(name):
 
     save_loc = get_save_location() / name
     os.chdir(save_loc)
-    text = run("git log", get_output=True)
+    try:
+        text = run("git log", get_output=True)
+    except subprocess.CalledProcessError: return 0
     last_commit_message = text.decode().split("\n\n")[1]
     try:
         return float(last_commit_message.strip())
     except ValueError: return 0
+
+
+def commit_save_if_needed(name, wait=10):
+    """Commits a save file if it has been long enough since last commit."""
+
+    last_save_time = get_last_save_time(name)
+    current_play_time = get_save_play_time(name)
+    if current_play_time >= last_save_time + wait:
+        save_loc = get_save_location() / name
+        os.chdir(save_loc)
+        print("Backing up", name)
+        run("git add -A")
+        run(f"git commit -m \"{current_play_time}\"")
+
+
+def commit_saves_if_needed(wait=10):
+    """Commits all save files if it has been long enough since their last
+    commit."""
+
+    saves = get_save_location()
+    for loc in os.listdir(saves):
+        if os.path.isdir(saves / loc) and check_save_is_git(saves / loc):
+            commit_save_if_needed(loc, wait)
+
+
+def watch(wait=10):
+    """Continuously monitors the save files and commits when necessary."""
+    
+    while True:
+        commit_saves_if_needed(wait=wait)
+
+
