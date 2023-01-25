@@ -3,9 +3,11 @@ import json
 import subprocess
 from pathlib import Path
 
-def run(command):
+def run(command, get_output=False):
     """Runs a shell command."""
 
+    if get_output:
+        return subprocess.check_output(command, shell=True)
     return subprocess.call(
         command, shell=True, stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL
@@ -52,3 +54,16 @@ def get_save_play_time(name):
         stats = json.load(f)
     time = stats["stats"]["minecraft:custom"]["minecraft:play_time"]
     return round(time / 20 / 60, 2)
+
+
+
+def get_last_save_time(name):
+    """Gets the last save time from the commit messages."""
+
+    save_loc = get_save_location() / name
+    os.chdir(save_loc)
+    text = run("git log", get_output=True)
+    last_commit_message = text.decode().split("\n\n")[1]
+    try:
+        return float(last_commit_message.strip())
+    except ValueError: return 0
