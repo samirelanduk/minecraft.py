@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 from pathlib import Path
 
@@ -38,3 +39,16 @@ def init_save(name):
     save_loc = get_save_location() / name
     os.chdir(save_loc)
     run("git init")
+
+
+def get_save_play_time(name):
+    """Gets the number of minutes of play time in a save file."""
+    
+    save_loc = get_save_location() / name
+    stats_jsons = os.listdir(save_loc / "stats")
+    if len(stats_jsons) == 0:
+        raise FileNotFoundError("No stats file for", name)
+    with open(save_loc / "stats" / stats_jsons[0]) as f:
+        stats = json.load(f)
+    time = stats["stats"]["minecraft:custom"]["minecraft:play_time"]
+    return round(time / 20 / 60, 2)
