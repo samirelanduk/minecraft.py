@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 import subprocess
 from pathlib import Path
 
@@ -96,8 +97,27 @@ def commit_saves_if_needed(wait=10):
 
 def watch(wait=10):
     """Continuously monitors the save files and commits when necessary."""
-    
+
     while True:
         commit_saves_if_needed(wait=wait)
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("mode", choices=("watch", "save", "init"), type=str)
+parser.add_argument("--wait", help="Time to wait in seconds", type=int, default=10)
+parser.add_argument("--name", help="The save file to use", type=str)
+args = parser.parse_args()
+
+if args.mode == "watch":
+    watch(args.wait)
+
+if args.mode == "save":
+    if args.name:
+        commit_save_if_needed(args.name, args.wait)
+    else:
+        commit_saves_if_needed(args.wait)
+
+if args.mode == "init":
+    if args.name is None:
+        parser.error("init mode requires --name.")
+    init_save(args.name)
